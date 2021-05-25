@@ -1,0 +1,47 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+struct Cube
+{
+    float3 position;
+    float4 color;
+};
+
+struct Node
+{
+    float3 position;
+    float4 color;
+};
+
+RWStructuredBuffer<Cube> cubes;
+RWStructuredBuffer<Node> nodes;
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture2D<float4> Result;
+
+float resolution;
+int NodeCount;
+
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+    float x = id.x / resolution;
+    float y = id.y / resolution;
+
+    int closest = 0;
+    float closestDistance = resolution * 4;
+
+    for (int i = 0; i < NodeCount; i++)
+    {
+        float d = sqrt(pow(nodes[i].position.x - x, 2) + pow(nodes[i].position.y - y, 2));
+        if (closestDistance > d)
+        {
+            closestDistance = d;
+            closest = i;
+        }
+    }
+    
+    Result[id.xy] = nodes[closest].color;
+}

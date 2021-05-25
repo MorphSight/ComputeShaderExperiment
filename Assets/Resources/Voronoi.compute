@@ -1,0 +1,85 @@
+#pragma kernel Voronoi
+
+struct Node
+{
+    float3 position;
+    float4 color;
+};
+
+//Uniforms
+RWStructuredBuffer<Node> nodes;
+RWTexture2D<float4> result;
+RWStructuredBuffer<int> result_map;
+RWStructuredBuffer<Node> result_nodes;
+float resolution;
+int node_count;
+
+[numthreads(8,8,1)]
+void Voronoi (uint3 id : SV_DispatchThreadID)
+{
+    float x = id.x;
+    float y = id.y;
+
+    int closest = 0;
+    float closestDistance = resolution * 4;
+
+    for (int i = 0; i < node_count; i++)
+    {
+        float d = sqrt(pow(nodes[i].position.x - x, 2) + pow(nodes[i].position.y - y, 2));
+        if (closestDistance > d)
+        {
+            closestDistance = d;
+            closest = i;
+        }
+    }
+    
+    result[id.xy] = nodes[closest].color;
+}
+
+#pragma kernel VoronoiIndex
+
+[numthreads(8,8,1)]
+void VoronoiIndex (uint3 id : SV_DispatchThreadID)
+{
+    float x = id.x;
+    float y = id.y;
+
+    int closest = 0;
+    float closestDistance = resolution * 4;
+
+    for (int i = 0; i < node_count; i++)
+    {
+        float d = sqrt(pow(nodes[i].position.x - x, 2) + pow(nodes[i].position.y - y, 2));
+        if (closestDistance > d)
+        {
+            closestDistance = d;
+            closest = i;
+        }
+    }
+    
+    result_map[(id.x * resolution) + id.y] = closest;
+}
+
+#pragma kernel VoronoiNode
+
+[numthreads(8,1,1)]
+void VoronoiNode(uint3 id : SV_DispatchThreadID)
+{
+    Node node = result_nodes[id.x];
+    
+    int closest = 0;
+    float closestDistance = resolution * 4;
+
+    for (int i = 0; i < node_count; i++)
+    {
+        float d = sqrt(pow(nodes[i].position.x - node.position.x, 2) + pow(nodes[i].position.y - node.position.y, 2));
+        if (closestDistance > d)
+        {
+            closestDistance = d;
+            closest = i;
+        }
+    }
+    
+    /*result[id.xy] = nodes[closest].color;*/
+    result_nodes[id.x].color = nodes[closest].color;
+}

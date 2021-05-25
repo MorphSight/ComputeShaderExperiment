@@ -1,0 +1,7 @@
+#pragma kernel PerlinNoise
+
+[numthreads(8, 8, 1)]
+void PerlinNoise(uint3 id : SV_DispatchThreadID)
+{
+    
+}
